@@ -2,14 +2,41 @@
 
 Generates three types of graphics: all view, scroller, and gif
 
+# Table of Contents
+- [Examples of Graphics](#examples-of-graphics)
+
+    - [All View](#all-view)
+    
+    - [GIF](#gif)
+    
+    - [Scroller](#scroller)
+- [Input structure](#input-structure)
+
+    - [Input directory](#input-directory)
+    
+    - [Key file](#key-file)
+    
+    - [Topic submissions](#topic-submissions)
+    
+    - [Topic file](#topic-file)
+- [Dependencies](#dependencies)
+- [Usage](#usage)
+- [How the game is played](#how-the-game-is-played)
+- [Latest Features](#latest-features)
+- [Roadmap](#roadmap)
+
+### Examples of Graphics
+#### All View
 ![](assets/H_all_view.png)
 
 Great for embedding in emails.
 
+#### GIF
 ![](assets/F_motion.gif)
 
 Look! It moves!
 
+#### Scroller
 ![](assets/06_scroller.png)
 
 Good for thumb scrolling on mobile.
