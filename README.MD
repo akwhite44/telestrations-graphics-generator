@@ -27,17 +27,17 @@ Generates three types of graphics: all view, scroller, and gif
 
 ### Examples of Graphics
 #### All View
-![](assets/H_all_view.png)
+![all view example graphic](assets/H_all_view.png)
 
 Great for embedding in emails.
 
 #### GIF
-![](assets/F_motion.gif)
+![gif example graphic](assets/F_motion.gif)
 
 Look! It moves!
 
 #### Scroller
-![](assets/06_scroller.png)
+![scroller example graphic](assets/06_scroller.png | width=100)
 
 Good for thumb scrolling on mobile.
 
@@ -92,7 +92,7 @@ When using Homebrew: brew install libmagic
 
 ## Usage
 
-```$ python main.py INPUT_DIRECTORY OUTPUT_DIRECTORY GAME_NUMBER```
+```$ python main.py INPUT_DIRECTORY OUTPUT_DIRECTORY```
 
 ## How the game is played
 

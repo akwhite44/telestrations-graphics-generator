@@ -120,7 +120,8 @@ class GraphicsMaker:
         # paste outline color to input image through the mask
         image.paste(outline, mask=mask)
 
-    def create_all_view_image(self, output_image_path, output_images, single_image_width, numbered_labels=True):
+    def create_all_view_image(self, output_image_path, output_images, single_image_width, count_offset=0,
+                              numbered_labels=True):
         # todo handle correct numbers
         # todo handle double digit numbers
         # add numbers
@@ -138,7 +139,7 @@ class GraphicsMaker:
             sideways_image.paste(im, paste_top_left_coordinates)
 
             # draw number label
-            if 0 < i < len(output_images)-1 and numbered_labels:
+            if 0 < i < len(output_images)-1-count_offset and numbered_labels:
                 draw = ImageDraw.Draw(sideways_image)
                 # (x1, y1, x2, y2)
                 offset = 10
@@ -148,9 +149,9 @@ class GraphicsMaker:
                                            ((i % 2) * single_image_width) + (offset + diameter))
                 # if even amount of numbers then i = 0
                 if len(self.players.keys()) == len(output_images) - 2:
-                    num = str(i-1)
+                    num = str(i-1+count_offset)
                 else:
-                    num = str(i)
+                    num = str(i+count_offset)
                 # todo fix drawing circle
                 # draw_ellipse(im, draw_circle_coordinates, width=10, antialias=8)
                 draw.ellipse(draw_circle_coordinates, outline='red', fill='red')
@@ -225,63 +226,67 @@ class GraphicsMaker:
         self.assemble_drawing_key(os.path.join(input_path, "key.txt"))
 
         file_items = self.get_ordered_tasks(input_path)
-        media_output_path = os.path.join(output_path, 'media')
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            media_output_path = os.path.join(tmpdirname, 'media')
+            # todo use named temporary directory
 
-        for res_dir_file_path, i in file_items:
-            files = self.get_ordered_responses(res_dir_file_path)
-            output_images = list()
+            for res_dir_file_path, i in file_items:
+                files = self.get_ordered_responses(res_dir_file_path)
+                output_images = list()
 
-            for j, submission in enumerate(files):
-                if j == 0:
-                    # create_title card that is used with each gif
-                    with open(submission[2], 'rt') as text_file:
-                        title_msg = 'The Gang Draws: {}'.format(text_file.read())
-                    title_card_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                    self.create_text_image(title_card_path, title_msg, self.width, self.height)
-                    output_images.append(title_card_path.name)
-                else:
-                    if submission[1][:4] == 'text':
-                        # check if rtf
-                        try:
-                            with open(submission[2], 'r') as text_file:
-                                # first one "the gang draws"
-                                msg = text_file.read()
-                        except UnicodeDecodeError:
-                            with open(submission[2], 'r', encoding='ISO-8859-1') as text_file:
-                                # first one "the gang draws"
-                                msg = text_file.read()
-                        text_image_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                        self.create_text_image(text_image_path, msg, self.width, self.height)
-                        output_images.append(text_image_path.name)
+                for j, submission in enumerate(files):
+                    if j == 0:
+                        # create_title card that is used with each gif
+                        with open(submission[2], 'rt') as text_file:
+                            title_msg = 'The Gang Draws: {}'.format(text_file.read())
+                        title_card_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                        self.create_text_image(title_card_path, title_msg, self.width, self.height)
+                        output_images.append(title_card_path.name)
                     else:
-                        output_image_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                        self.resize_and_center_image_in_frame(output_image_path, submission[2], self.width, self.height)
-                        output_images.append(output_image_path.name)
-            if len(files) == len(self.players.keys()):
-                output_images.append(self.key_frame_sans_first)
-            else:
-                output_images.append(self.key_frame_all)
+                        if submission[1][:4] == 'text':
+                            # check if rtf
+                            try:
+                                with open(submission[2], 'r') as text_file:
+                                    # first one "the gang draws"
+                                    msg = text_file.read()
+                            except UnicodeDecodeError:
+                                with open(submission[2], 'r', encoding='ISO-8859-1') as text_file:
+                                    # first one "the gang draws"
+                                    msg = text_file.read()
+                            text_image_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                            self.create_text_image(text_image_path, msg, self.width, self.height)
+                            output_images.append(text_image_path.name)
+                        else:
+                            output_image_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                            self.resize_and_center_image_in_frame(output_image_path, submission[2], self.width, self.height)
+                            output_images.append(output_image_path.name)
+                if len(files) == len(self.players.keys()):
+                    output_images.append(self.key_frame_sans_first)
+                else:
+                    output_images.append(self.key_frame_all)
 
-            os.makedirs(media_output_path, exist_ok=True)
+                os.makedirs(media_output_path, exist_ok=True)
 
-            all_view_path = os.path.join(media_output_path, '{}_all_view.png'.format(i))
-            self.create_all_view_image(all_view_path, output_images, self.width)
+                all_view_path = os.path.join(media_output_path, '{}_labeled_all_view.png'.format(i))
+                self.create_all_view_image(all_view_path, output_images, self.width)
 
-            output_images.pop(-1)
+                output_images.pop(-1)
+                all_view_path = os.path.join(media_output_path, '{}_all_view.png'.format(i))
+                self.create_all_view_image(all_view_path, output_images, self.width, count_offset=-1)
 
-            gif_path = os.path.join(media_output_path, '{}_motion'.format(i))
-            write_gif(output_images, gif_path, 3)
+                gif_path = os.path.join(media_output_path, '{}_motion'.format(i))
+                write_gif(output_images, gif_path, 3)
 
-            scroller_path = os.path.join(media_output_path, '{}_scroller.png'.format(i))
-            self.create_scroller_image(scroller_path, output_images, self.width)
+                scroller_path = os.path.join(media_output_path, '{}_scroller.png'.format(i))
+                self.create_scroller_image(scroller_path, output_images, self.width)
 
-            for x, temp_file in enumerate(output_images):
-                if x != len(output_images)-1:
-                    os.unlink(temp_file)
+                for x, temp_file in enumerate(output_images):
+                    if x != len(output_images)-1:
+                        os.unlink(temp_file)
 
-        zip_output_path = os.path.join(output_path, 'week_{}_results.zip'.format(self.week_num))
-        with zipfile.ZipFile(zip_output_path, 'w', zipfile.ZIP_DEFLATED) as z:
-            self.zipdir(media_output_path, z)
-        os.unlink(self.key_frame_all)
-        os.unlink(self.key_frame_sans_first)
-        print("All graphics generated and can be found in the zip located here:\n{}".format(zip_output_path))
+            zip_output_path = os.path.join(output_path, 'week_{}_results.zip'.format(self.week_num))
+            with zipfile.ZipFile(zip_output_path, 'w', zipfile.ZIP_DEFLATED) as z:
+                self.zipdir(media_output_path, z)
+            os.unlink(self.key_frame_all)
+            os.unlink(self.key_frame_sans_first)
+            print("All graphics generated and can be found in the zip located here:\n{}".format(zip_output_path))

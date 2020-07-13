@@ -46,6 +46,5 @@ if __name__ == '__main__':
     # TODO
     # break up and reorg graphics maker methods
     # add more documentation
-    # add documentaiton on how input should look
-    # add example images to docs
+    # add documentation on how input should look
     # delete folder where temporarily stored
