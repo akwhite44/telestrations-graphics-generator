@@ -37,7 +37,7 @@ Great for embedding in emails.
 Look! It moves!
 
 #### Scroller
-![scroller example graphic](assets/06_scroller.png | width=100)
+<img src="assets/06_scroller.png" width="300" />
 
 Good for thumb scrolling on mobile.
 
@@ -114,5 +114,3 @@ Ask Jason.
  - analyze phrases and make off the rail meter graphic-> put in gif
     
  - if double digits then center it number over circle in all view
- - fix numbering so it is the number in the file name
- - fix allview not having all
