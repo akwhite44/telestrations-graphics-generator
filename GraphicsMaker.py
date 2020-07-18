@@ -70,15 +70,21 @@ class GraphicsMaker:
         img = Image.new('RGB', (image_width, image_height), color=(0, 0, 0))
         draw = ImageDraw.Draw(img)
         current_h, pad = (image_height - (ascent * msg_lines.__len__())), 10
-        current_h = 25
+        initial_height = 25
+        current_h = initial_height
         w_offset = 25
+        max_width_of_col = 10
         for line in msg_lines:
             w, h = draw.textsize(line, font=font)
-
-            # todo start at top and start at same width
+            if w > max_width_of_col:
+                max_width_of_col = w
 
             draw.text((w_offset, current_h), line, font=font, fill=(255, 255, 255))
             current_h += h + pad
+            if current_h > 800-ascent:  # start new column
+                w_offset += max_width_of_col + 25
+                current_h = initial_height
+                max_width_of_col = 10
         img.save(text_image_path)
 
     def resize_and_center_image_in_frame(self, output_image_path, input_image_path, width, height):

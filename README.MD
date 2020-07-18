@@ -112,5 +112,11 @@ Ask Jason.
  - create gif with circle on images
  - make a live photo version of this
  - analyze phrases and make off the rail meter graphic-> put in gif
-    
+ - zip items into folder not folder itself
  - if double digits then center it number over circle in all view
+ 
+ 
+ # fix today
+ - arg for week number
+ - centering number
+ - making sure text fits for title card
