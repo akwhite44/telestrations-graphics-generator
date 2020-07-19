@@ -128,8 +128,6 @@ class GraphicsMaker:
 
     def create_all_view_image(self, output_image_path, output_images, single_image_width, count_offset=0,
                               numbered_labels=True):
-        # todo handle correct numbers
-        # todo handle double digit numbers
         # add numbers
         if output_images.__len__() % 2 == 1:
             width = ceil((output_images.__len__() + 1) * single_image_width / 2)
@@ -158,7 +156,7 @@ class GraphicsMaker:
                     num = str(i-1+count_offset)
                 else:
                     num = str(i+count_offset)
-                # todo fix drawing circle
+                # todo improve smoothness of ellipse
                 # draw_ellipse(im, draw_circle_coordinates, width=10, antialias=8)
                 draw.ellipse(draw_circle_coordinates, outline='red', fill='red')
                 try:
@@ -168,8 +166,13 @@ class GraphicsMaker:
                     font = ImageFont.load_default()
                 ascent, descent = font.getmetrics()
                 (text_width, baseline), (offset_x, offset_y) = font.font.getsize(num)
-                # todo fix centering of text in circle
-                number_coordinate = ((single_image_width * x) + ((offset + diameter) / 2) - (text_width / 4),
+                num_text_width, h = draw.textsize(num, font=font)
+                if num.__len__() == 2:
+                    text_width_offset = (2 * num_text_width / 5)
+                else:
+                    text_width_offset = (num_text_width / 4)
+
+                number_coordinate = ((single_image_width * x) + ((offset + diameter) / 2) - text_width_offset,
                                      ((i % 2) * single_image_width) + ((offset + diameter) / 2) - 28)
                 draw.text(number_coordinate, num, font=font, fill='white')
             if (i % 2) == 1:
