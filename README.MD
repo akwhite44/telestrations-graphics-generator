@@ -112,5 +112,4 @@ Ask Jason.
  - create gif with circle on images
  - make a live photo version of this
  - analyze phrases and make off the rail meter graphic-> put in gif
-    
  - if double digits then center it number over circle in all view
