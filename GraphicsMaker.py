@@ -8,6 +8,7 @@ import zipfile
 import tempfile
 
 
+
 class GraphicsMaker:
     def __init__(self, width, height, week):
         self.players = dict()
@@ -32,7 +33,7 @@ class GraphicsMaker:
             return result
 
     @staticmethod
-    def create_text_image(text_image_path, msg, image_width, image_height):
+    def create_text_image(text_image_path, msg, image_width, image_height, output_path=None):
         # todo get/set right ratio of image size to font and padding for wrap text width
         # todo make sure graphics
         try:
@@ -53,9 +54,14 @@ class GraphicsMaker:
             draw.text(((image_width - w) / 2, current_h), line, font=font, fill=(255, 255, 255))
             current_h += h + pad
         img.save(text_image_path)
+        if output_path:
+            try:
+                img.save(output_path)
+            except Exception as e:
+                print(e)
 
     @staticmethod
-    def create_key_image(text_image_path, msg_lines, image_width, image_height):
+    def create_key_image(text_image_path, msg_lines, image_width, image_height, output_path=None):
         # todo handle larger amount of players
         # todo get/set right ratio of image size to font and padding for wrap text width
         # todo new line separate and draw ellipses
@@ -86,6 +92,11 @@ class GraphicsMaker:
                 current_h = initial_height
                 max_width_of_col = 10
         img.save(text_image_path)
+        if output_path:
+            try:
+                img.save(output_path)
+            except Exception as e:
+                print(e)
 
     def resize_and_center_image_in_frame(self, output_image_path, input_image_path, width, height):
         image = Image.open(input_image_path)
@@ -125,6 +136,70 @@ class GraphicsMaker:
         mask = mask.resize(image.size, Image.LANCZOS)
         # paste outline color to input image through the mask
         image.paste(outline, mask=mask)
+
+    def create_all_view_image_four_wide(self, output_image_path, output_images, single_image_width, count_offset=0,
+                                        numbered_labels=True):
+        # todo make it work for 3+ rows
+        # add numbers
+        if output_images.__len__() % 2 == 1:
+            num_items = output_images.__len__() + 1
+            items_in_row = num_items / 2 if num_items < 8 else 4
+            width = ceil(items_in_row * single_image_width)  # fix
+            height = single_image_width * 2 * ceil(num_items/8)  # fix
+        else:
+            num_items = output_images.__len__()
+            items_in_row = num_items / 2 if num_items < 8 else 4
+            width = ceil(items_in_row * single_image_width)  # fix
+            height = single_image_width * 2 * ceil(num_items/8)  # fix
+        sideways_image = Image.new('RGB', (width, height), color=(0, 0, 0))
+        x = 0
+        for i, im_path in enumerate(output_images):
+            im = Image.open(im_path)
+            y_coord = (i % 2) * single_image_width if i < 8 else ((i % 2) + 2) * single_image_width
+            x_coord = single_image_width * x
+            paste_top_left_coordinates = (x_coord, y_coord)
+            sideways_image.paste(im, paste_top_left_coordinates)
+
+            # draw number label
+            if 0 < i < len(output_images) - 1 - count_offset and numbered_labels:
+                draw = ImageDraw.Draw(sideways_image)
+                # (x1, y1, x2, y2)
+                offset = 10
+                diameter = 70
+                circle_y_coord_top = ((i % 2) * single_image_width) + offset if i < 8 else (((i % 2) + 2) * single_image_width) + offset
+                circle_y_coord_bottom = ((i % 2) * single_image_width) + (offset + diameter) if i < 8 else (((i % 2) + 2) * single_image_width) + (offset + diameter)
+                draw_circle_coordinates = ((single_image_width * x) + offset, circle_y_coord_top,
+                                           (single_image_width * x) + (offset + diameter),
+                                           circle_y_coord_bottom)
+                # if even amount of numbers then i = 0
+                if len(self.players.keys()) == len(output_images) - 2:
+                    num = str(i - 1 + count_offset)
+                else:
+                    num = str(i + count_offset)
+                # todo improve smoothness of ellipse
+                # draw_ellipse(im, draw_circle_coordinates, width=10, antialias=8)
+                draw.ellipse(draw_circle_coordinates, outline='red', fill='red')
+                try:
+                    font = ImageFont.truetype('TitilliumWeb-Bold.ttf', 40)
+                except Exception:
+                    print("Warning no TitilliumWeb-Bold.ttf. Using default instead.")
+                    font = ImageFont.load_default()
+                ascent, descent = font.getmetrics()
+                (text_width, baseline), (offset_x, offset_y) = font.font.getsize(num)
+                num_text_width, h = draw.textsize(num, font=font)
+                if num.__len__() == 2:
+                    text_width_offset = (2 * num_text_width / 5)
+                else:
+                    text_width_offset = (num_text_width / 4)
+                num_x_coord = (single_image_width * x) + ((offset + diameter) / 2) - text_width_offset
+                num_y_coord = ((i % 2) * single_image_width) + ((offset + diameter) / 2) - 28 if i < 8 else (((i % 2) + 2) * single_image_width) + ((offset + diameter) / 2) - 28
+                number_coordinate = (num_x_coord, num_y_coord)
+                draw.text(number_coordinate, num, font=font, fill='white')
+            if (i % 2) == 1:
+                x += 1
+            if i == 7:
+                x = 0
+        sideways_image.save(output_image_path)
 
     def create_all_view_image(self, output_image_path, output_images, single_image_width, count_offset=0,
                               numbered_labels=True):
@@ -179,7 +254,10 @@ class GraphicsMaker:
                 x += 1
         sideways_image.save(output_image_path)
 
-    def assemble_drawing_key(self, path):
+    def assemble_drawing_key(self, path, output_path):
+        key_card_output_path = os.path.join(output_path, 'key_card.png')
+        key_card_sans_first_output_path = os.path.join(output_path, 'key_card_sans_first.png')
+
         msg = []
         with open(path, 'r') as f:
             res = f.read().splitlines()
@@ -191,11 +269,12 @@ class GraphicsMaker:
 
         all_card_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
         sans_first_card_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-        self.create_key_image(all_card_path, msg, self.width, self.height)
+        self.create_key_image(all_card_path, msg, self.width, self.height, key_card_output_path)
         msg.pop(0)
-        self.create_key_image(sans_first_card_path, msg, self.width, self.height)
+        self.create_key_image(sans_first_card_path, msg, self.width, self.height, key_card_sans_first_output_path)
         self.key_frame_all = all_card_path.name
         self.key_frame_sans_first = sans_first_card_path.name
+
 
     @staticmethod
     def get_ordered_responses(input_dir_path):
@@ -232,12 +311,11 @@ class GraphicsMaker:
 
     def create_result_medias(self, input_path, output_path):
 
-        self.assemble_drawing_key(os.path.join(input_path, "key.txt"))
-
         file_items = self.get_ordered_tasks(input_path)
         with tempfile.TemporaryDirectory() as tmpdirname:
             media_output_path = os.path.join(tmpdirname, 'media')
-            # todo use named temporary directory
+            os.makedirs(media_output_path, exist_ok=True)
+            self.assemble_drawing_key(os.path.join(input_path, "key.txt"), media_output_path)
 
             for res_dir_file_path, i in file_items:
                 files = self.get_ordered_responses(res_dir_file_path)
@@ -249,7 +327,9 @@ class GraphicsMaker:
                         with open(submission[2], 'rt') as text_file:
                             title_msg = 'The Gang Draws: {}'.format(text_file.read())
                         title_card_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                        self.create_text_image(title_card_path, title_msg, self.width, self.height)
+                        title_card_output_path = os.path.join(media_output_path, '{}_title_card.png'.format(i))
+                        self.create_text_image(title_card_path, title_msg, self.width, self.height,
+                                               title_card_output_path)
                         output_images.append(title_card_path.name)
                     else:
                         if submission[1][:4] == 'text':
@@ -263,7 +343,7 @@ class GraphicsMaker:
                                     # first one "the gang draws"
                                     msg = text_file.read()
                             text_image_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                            self.create_text_image(text_image_path, msg, self.width, self.height)
+                            self.create_text_image(text_image_path, msg, self.width, self.height) # todo output text images
                             output_images.append(text_image_path.name)
                         else:
                             output_image_path = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
@@ -274,14 +354,16 @@ class GraphicsMaker:
                 else:
                     output_images.append(self.key_frame_all)
 
-                os.makedirs(media_output_path, exist_ok=True)
-
                 all_view_path = os.path.join(media_output_path, '{}_labeled_all_view.png'.format(i))
                 self.create_all_view_image(all_view_path, output_images, self.width)
+                all_view_four_wide_path = os.path.join(media_output_path, '{}_4x_labeled_all_view.png'.format(i))
+                self.create_all_view_image_four_wide(all_view_four_wide_path, output_images, self.width)
 
                 output_images.pop(-1)
                 all_view_path = os.path.join(media_output_path, '{}_all_view.png'.format(i))
                 self.create_all_view_image(all_view_path, output_images, self.width, count_offset=-1)
+                all_view_four_wide_path = os.path.join(media_output_path, '{}_4x_all_view.png'.format(i))
+                self.create_all_view_image_four_wide(all_view_four_wide_path, output_images, self.width, count_offset=-1)
 
                 gif_path = os.path.join(media_output_path, '{}_motion'.format(i))
                 write_gif(output_images, gif_path, 3)

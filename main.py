@@ -40,7 +40,7 @@ if __name__ == '__main__':
     else:
         image_width, image_height = 800, 800
 
-    maker = GraphicsMaker(image_width, image_height, game_number)
+    maker = GraphicsMaker(image_width, image_height, 3)
     maker.create_result_medias(input_path, output_path)
 
     # TODO
